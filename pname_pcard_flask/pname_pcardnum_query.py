@@ -4,13 +4,13 @@ import os
 import shutil
 import time
 import threading
-
 import pymysql
 import requests
 import lianzhong_api
+from queue import Queue
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
-from queue import Queue
+
 
 
 
@@ -114,7 +114,7 @@ class IndexName(object):
             bool = self.check_yzm(captchaid, code)
             if bool:
                 pic = os.listdir('F:\\Pycharm_projects\\pname_pcard_query\\pname_pcard_query\\spiders\\verify_code')
-                # 将正确识别的文件复制到独立目录下
+                # 将正确识别的验证码复制到独立目录下
                 shutil.copyfile(
                     f"F:\\Pycharm_projects\\pname_pcard_query\\pname_pcard_query\\spiders\\verify_code\\{pic[-1]}",
                     f"F:\\Pycharm_projects\\pname_pcard_query\\pname_pcard_query\\spiders\\True\\{pic[-1]}")
@@ -149,67 +149,92 @@ class IndexName(object):
     #主函数入口
     def main(self):
         self.lock.acquire()
-        # try:
-        if not self.q.empty():
-            group = self.q.get()
-            name = group[0]
-            cardnum = group[1]
-            tup = self.get_page(name,cardnum)
+        try:
+            if not self.q.empty():
+                group = self.q.get()
+                name = group[0]
+                cardnum = group[1]
+                tup = self.get_page(name,cardnum)
 
-            if tup != '未查到相关信息':
-                for page in range(1, tup[0]+1):
-                    querystring = {
-                        "captchaId": tup[1],
-                        'currentPage': page,
-                        'pCardNum': cardnum,
-                        'pCode': tup[2],
-                        'pName': name,
-                        'searchCourtName': '全国法院（包含地方各级法院）',
-                        'selectCourtArrange': 1,
-                        'selectCourtId': 0
+                if tup != '未查到相关信息':
+                    for page in range(1, tup[0]+1):
+                        querystring = {
+                            "captchaId": tup[1],
+                            'currentPage': page,
+                            'pCardNum': cardnum,
+                            'pCode': tup[2],
+                            'pName': name,
+                            'searchCourtName': '全国法院（包含地方各级法院）',
+                            'selectCourtArrange': 1,
+                            'selectCourtId': 0
 
-                    }
+                        }
 
-                    response = requests.request("POST", self.post_url, headers=self.headers, data=querystring)
-                    response.encoding = 'utf-8'
-                    if response.text:
-                        result = json.loads(response.text)
+                        response = requests.request("POST", self.post_url, headers=self.headers, data=querystring)
+                        response.encoding = 'utf-8'
+                        if response.text:
+                            result = json.loads(response.text)
 
-                        data = result[0]['result']
-                        for each in data:
-                            dic = {}
-                            json_data = json.loads(each['jsonObject'],strict=False)
+                            data = result[0]['result']
+                            for each in data:
+                                dic = {}
+                                json_data = json.loads(each['jsonObject'],strict=False)
 
-                            #姓名
-                            dic['pname'] = name
+                                #姓名
+                                dic['pname'] = json_data['XM'] if 'XM' in json_data else ''
 
-                            #性别
-                            dic['sex'] = json_data['ZXFYMC'] if 'ZXFYMC' in json_data else ''
+                                #性别
+                                dic['sex'] = json_data['ZXFYMC'] if 'ZXFYMC' in json_data else ''
 
-                            #身份证号码
-                            dic['cardnum'] = cardnum
+                                #身份证号码
+                                dic['cardnum'] = cardnum
 
-                            #立案时间
-                            dic['filing_time'] = json_data['LASJ'] if 'LASJ' in json_data  else ''
+                                #立案时间
+                                dic['filing_time'] = json_data['LASJ'] if 'LASJ' in json_data  else ''
 
-                            #案号
-                            dic['case_num'] = json_data['AH'] if 'AH' in json_data else ''
+                                #案号
+                                dic['case_num'] = json_data['AH'] if 'AH' in json_data else ''
 
-                            #企业信息
-                            dic['enterprise_info'] = json_data['QY_MC'] if 'QY_MC'in json_data else ''
+                                #企业信息
+                                dic['enterprise_info'] = json_data['QY_MC'] if 'QY_MC'in json_data else ''
 
-                            self.data_list.append(dic)
-                            self.save2Mysql(dic)
+                                self.data_list.append(dic)
+                                self.save2Mysql(dic)
 
-                with open('F:/Pycharm_projects/pname_pcard_query/pname_pcard_query/pname_pcard_flask/query_info2.json','w',encoding='utf-8') as f:
-                    f.write(json.dumps(self.data_list,ensure_ascii=False))
+                    with open('F:/Pycharm_projects/pname_pcard_query/pname_pcard_query/pname_pcard_flask/query_info2.json','w',encoding='utf-8') as f:
+                        f.write(json.dumps(self.data_list,ensure_ascii=False))
 
+                else:
+                    info={}
+                    info['result'] = tup
+                    with open(
+                            'F:/Pycharm_projects/pname_pcard_query/pname_pcard_query/pname_pcard_flask/query_info2.json',
+                            'w', encoding='utf-8') as f:
+                        f.write(json.dumps(info, ensure_ascii=False))
 
-            else:
-                self.data_list.append(tup)
+                    dic = {}
+                    # 姓名
+                    dic['pname'] = name
 
-        # except Exception as e:
-        #     print(f"出现异常：{e}")
+                    # 性别
+                    dic['sex'] = ''
+
+                    # 身份证号码
+                    dic['cardnum'] = cardnum
+
+                    # 立案时间
+                    dic['filing_time'] = ''
+
+                    # 案号
+                    dic['case_num'] = ''
+
+                    # 企业信息
+                    dic['enterprise_info'] = ''
+
+                    self.save2Mysql(dic)
+
+        except Exception as e:
+            print(f"出现异常：{e}")
             with open('F:/Pycharm_projects/pname_pcard_query/pname_pcard_query/pname_pcard_flask/query_info2.json', 'w',encoding='utf-8') as f:
                 f.write(json.dumps(self.data_list, ensure_ascii=False))
         self.lock.release()
