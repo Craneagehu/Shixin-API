@@ -12,7 +12,7 @@ from twisted.enterprise import adbapi
 class PnamePcardQueryPipeline(object):
 
     def __init__(self):
-        self.file = open('F:/Pycharm_projects/pname_pcard_query/pname_pcard_query/pname_pcard_flask/query_info.json', 'w', encoding='utf-8')
+        self.file = open('F:\Pycharm_projects\Clone2\pname_pcard_query\shixin_flask\query_info.json', 'w', encoding='utf-8')
 
     def process_item(self, item, spider):
         item_json = json.dumps(dict(item), ensure_ascii=False)

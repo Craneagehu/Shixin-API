@@ -27,7 +27,6 @@ class IndexName(object):
             'User-Agent': "PostmanRuntime/7.15.0",
             'Accept': "*/*",
             'Cache-Control': "no-cache",
-            #'Postman-Token': "fa755e84-c939-4d09-8b45-527cd425bc45,0cfb1ba6-16d6-4a2d-aecd-70d7f5258e9e",
             'Host': "zxgk.court.gov.cn",
             'cookie': "JSESSIONID=F63BA51751C76CCD1DD5A2FE01FF1C40",
             'accept-encoding': "gzip, deflate",
@@ -44,7 +43,6 @@ class IndexName(object):
             'User-Agent': self.ua.random,
             'Accept': "*/*",
             'Cache-Control': "no-cache",
-            #'Postman-Token': "927d557c-c74a-4e9b-9dcc-d9d6cecf92f7,d09c0ecd-6b8e-42ff-80e5-0c2816110c6c",
             'Host': "zxgk.court.gov.cn",
             'cookie': "JSESSIONID=0F26336969AE2E43E4AF769A1DA8EB45",
             'accept-encoding': "gzip, deflate",
@@ -67,7 +65,7 @@ class IndexName(object):
         querystring = {"captchaId": captchaid, "random": "0.9207474150007781"}
         response = requests.request("GET",self.yzm_url, headers=self.headers, params=querystring)
         captcha_name = f'_{int(time.time())}'
-        with open(f'F:\\Pycharm_projects\\pname_pcard_query\\pname_pcard_query\spiders\\verify_code\\{captcha_name}.jpg','wb') as f:
+        with open(f'../spiders/verify_code/{captcha_name}.jpg','wb') as f:
                 f.write(response.content)
 
         return captcha_name
@@ -77,7 +75,7 @@ class IndexName(object):
 
             'a1366769',
             '1008611XJ...',
-            f'F:\\Pycharm_projects\\pname_pcard_query\\pname_pcard_query\spiders\\verify_code\\{captcha_name}.jpg',
+            f'../spiders/verify_code/{captcha_name}.jpg',
             "http://v1-http-api.jsdama.com/api.php?mod=php&act=upload",
             '4',
             '8',
@@ -113,11 +111,11 @@ class IndexName(object):
             code = self.get_code(captcha_name)
             bool = self.check_yzm(captchaid, code)
             if bool:
-                pic = os.listdir('F:\\Pycharm_projects\\pname_pcard_query\\pname_pcard_query\\spiders\\verify_code')
+                pic = os.listdir('../spiders/verify_code')
                 # 将正确识别的验证码复制到独立目录下
                 shutil.copyfile(
-                    f"F:\\Pycharm_projects\\pname_pcard_query\\pname_pcard_query\\spiders\\verify_code\\{pic[-1]}",
-                    f"F:\\Pycharm_projects\\pname_pcard_query\\pname_pcard_query\\spiders\\True\\{pic[-1]}")
+                    f"../spiders/verify_code/{pic[-1]}",
+                    f"../spiders/True/{pic[-1]}")
                 break
             else:
                 print("验证码识别错误")
@@ -201,15 +199,14 @@ class IndexName(object):
                                 self.data_list.append(dic)
                                 self.save2Mysql(dic)
 
-                    with open('F:/Pycharm_projects/pname_pcard_query/pname_pcard_query/pname_pcard_flask/query_info2.json','w',encoding='utf-8') as f:
+                    with open('./query_info2.json','w',encoding='utf-8') as f:
                         f.write(json.dumps(self.data_list,ensure_ascii=False))
 
                 else:
                     info={}
                     info['result'] = tup
                     with open(
-                            'F:/Pycharm_projects/pname_pcard_query/pname_pcard_query/pname_pcard_flask/query_info2.json',
-                            'w', encoding='utf-8') as f:
+                            './query_info2.json','w', encoding='utf-8') as f:
                         f.write(json.dumps(info, ensure_ascii=False))
 
                     dic = {}
@@ -235,7 +232,7 @@ class IndexName(object):
 
         except Exception as e:
             print(f"出现异常：{e}")
-            with open('F:/Pycharm_projects/pname_pcard_query/pname_pcard_query/pname_pcard_flask/query_info2.json', 'w',encoding='utf-8') as f:
+            with open('./query_info2.json', 'w',encoding='utf-8') as f:
                 f.write(json.dumps(self.data_list, ensure_ascii=False))
         self.lock.release()
 

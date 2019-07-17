@@ -43,12 +43,12 @@ class NameCardQuerySpider(scrapy.Spider):
     def get_captchaid(self, response):
         #获取验证码二进制文件，并写入图片中
         captcha_name = f'_{int(time.time())}'
-        with open(f'F:\\Pycharm_projects\\pname_pcard_query\\pname_pcard_query\spiders\\verify_code\\{captcha_name}.jpg','wb') as f:
+        with open(f'F:\\Pycharm_projects\\Clone2\\pname_pcard_query\\spiders\\verify_code\\{captcha_name}.jpg','wb') as f:
             f.write(response.body)
         code = lianzhong_api.main(
                     'a1366769',
                     '1008611XJ...',
-                    f'F:\\Pycharm_projects\\pname_pcard_query\\pname_pcard_query\spiders\\verify_code\\{captcha_name}.jpg',
+                    f'F:\\Pycharm_projects\\Clone2\\pname_pcard_query\\spiders\\verify_code\\{captcha_name}.jpg',
                     "http://v1-http-api.jsdama.com/api.php?mod=php&act=upload",
                     '4',
                     '8',
@@ -61,11 +61,6 @@ class NameCardQuerySpider(scrapy.Spider):
         }
         params = urlencode(data)
         check_url = 'http://zxgk.court.gov.cn/xgl/checkyzm?' + params
-
-        # referer = {
-        #     'Referer': 'http://zxgk.court.gov.cn/xgl/'
-        # }
-        # check_headers = self.headers.update(referer)
 
         yield scrapy.Request(check_url,headers=self.headers,callback=self.check_captcha,dont_filter=True,meta=data)
 

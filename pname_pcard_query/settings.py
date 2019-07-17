@@ -98,10 +98,10 @@ HTTPERROR_ALLOWED_CODES = [403]
 DOWNLOAD_TIMEOUT = 15
 
 #日志文件
-LOG_LEVEL = 'DEBUG'
-to_day = datetime.datetime.now()
-log_file_path = 'log/pname_pcardnum_{}_{}_{}.log'.format(to_day.year, to_day.month, to_day.day)
-LOG_FILE = log_file_path
+# LOG_LEVEL = 'DEBUG'
+# to_day = datetime.datetime.now()
+# log_file_path = 'log/pname_pcardnum_{}_{}_{}.log'.format(to_day.year, to_day.month, to_day.day)
+# LOG_FILE = log_file_path
 
 
 
