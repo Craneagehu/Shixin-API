@@ -199,15 +199,10 @@ class IndexName(object):
                                 self.data_list.append(dic)
                                 self.save2Mysql(dic)
 
-                    with open('./query_info2.json','w',encoding='utf-8') as f:
-                        f.write(json.dumps(self.data_list,ensure_ascii=False))
 
                 else:
-                    info={}
-                    info['result'] = tup
-                    with open(
-                            './query_info2.json','w', encoding='utf-8') as f:
-                        f.write(json.dumps(info, ensure_ascii=False))
+
+                    self.data_list.append(tup)
 
                     dic = {}
                     # 姓名
@@ -232,8 +227,7 @@ class IndexName(object):
 
         except Exception as e:
             print(f"出现异常：{e}")
-            with open('./query_info2.json', 'w',encoding='utf-8') as f:
-                f.write(json.dumps(self.data_list, ensure_ascii=False))
+            self.data_list.append('403')
         self.lock.release()
 
     #将数据保存到数据库
@@ -257,7 +251,7 @@ class IndexName(object):
         for j in threadList:
             j.join()
 
-
+        return self.data_list
 
 if __name__ == '__main__':
 
