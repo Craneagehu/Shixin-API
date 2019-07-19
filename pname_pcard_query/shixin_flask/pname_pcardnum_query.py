@@ -85,7 +85,6 @@ class IndexName(object):
 
     #检验验证码是否正确
     def check_yzm(self,captchaid,code):
-
         querystring = {"captchaId": captchaid, "pCode": code}
         headers = {
             'User-Agent': self.ua.random,
@@ -199,9 +198,7 @@ class IndexName(object):
                                 self.data_list.append(dic)
                                 self.save2Mysql(dic)
 
-
                 else:
-
                     self.data_list.append(tup)
 
                     dic = {}

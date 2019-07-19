@@ -35,12 +35,12 @@ def query2(pname,pcardnum):
         cardnum = pcardnum.split('=')[1]
         data = pname_pcardnum_query.IndexName().MyThread(name, cardnum)
 
-        if data:
-            data = json.dumps(data,ensure_ascii=False).replace('"','\'')
-            return {'result':data}
-
+        if data[0] != "未查到相关信息":
+            result = {"result": data}
+            return json.dumps(result, ensure_ascii=False)
         else:
-            return None
+            result = {"result": data[0]}
+            return json.dumps(result, ensure_ascii=False)
 
 if __name__ == '__main__':
     #app.run(debug=True,host='0.0.0.0',port=5000)
