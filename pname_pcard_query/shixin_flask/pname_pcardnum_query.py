@@ -31,6 +31,7 @@ class IndexName(object):
             'cookie': "JSESSIONID=F63BA51751C76CCD1DD5A2FE01FF1C40",
             'accept-encoding': "gzip, deflate",
             'Connection': "keep-alive",
+            'X-Requested-With': 'XMLHttpRequest'
         }
         self.q = Queue()
         self.lock = threading.Lock()
@@ -47,7 +48,8 @@ class IndexName(object):
             'cookie': "JSESSIONID=0F26336969AE2E43E4AF769A1DA8EB45",
             'accept-encoding': "gzip, deflate",
             'Connection': "keep-alive",
-            'cache-control': "no-cache"
+            'cache-control': "no-cache",
+            'X-Requested-With': 'XMLHttpRequest'
         }
 
         response = requests.request("GET", self.start_url, headers=headers)
@@ -95,7 +97,8 @@ class IndexName(object):
             'cookie': "JSESSIONID=F63BA51751C76CCD1DD5A2FE01FF1C40",
             'accept-encoding': "gzip, deflate",
             'Connection': "keep-alive",
-            'cache-control': "no-cache"
+            'cache-control': "no-cache",
+            'X-Requested-With': 'XMLHttpRequest'
         }
 
         response = requests.request("GET", self.check_yzm_url, headers=headers, params=querystring)
@@ -253,13 +256,14 @@ class IndexName(object):
 if __name__ == '__main__':
 
     t1 = time.time()
-    name = '业春'
+    name = '王江红'
     cardnum = ''
     index = IndexName()
-    index.MyThread(name,cardnum)
+    data = index.MyThread(name,cardnum)
     #data = index.main(name,cardnum)
     t2 = time.time()
     print(f"耗时:{t2-t1}s")
+    print(data)
 
 
 
