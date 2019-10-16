@@ -10,8 +10,9 @@ import lianzhong_api
 from queue import Queue
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
-
-
+from send_email import Send_Email
+import sys
+sys.path.append('/root/Clone2/pname_pcard_query/shixin_flask')
 
 
 class IndexName(object):
@@ -24,32 +25,36 @@ class IndexName(object):
         self.post_url = 'http://zxgk.court.gov.cn/xgl/searchXgl.do'
         self.data_list = []
         self.headers = {
-            'User-Agent': "PostmanRuntime/7.15.0",
-            'Accept': "*/*",
-            'Cache-Control': "no-cache",
-            'Host': "zxgk.court.gov.cn",
-            'cookie': "JSESSIONID=F63BA51751C76CCD1DD5A2FE01FF1C40",
-            'accept-encoding': "gzip, deflate",
-            'Connection': "keep-alive",
-            'X-Requested-With': 'XMLHttpRequest'
+            "User-Agent": "PostmanRuntime/7.15.0",
+            "Accept": "application/json,text/javascript,*/*;q= 0.01",
+            "Cache-Control": "no-cache",
+            "Host": "zxgk.court.gov.cn",
+            "cookie": "JSESSIONID=F63BA51751C76CCD1DD5A2FE01FF1C40",
+            "accept-encoding": "gzip,deflate",
+            "Connection": "keep-alive",
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+
         }
         self.q = Queue()
         self.lock = threading.Lock()
-        self.conn = pymysql.connect(host='localhost',user = 'root',password = 'admin',database='data_query',port = 3306,charset='utf8')
-        self.cur = self.conn.cursor()
+        # self.conn = pymysql.connect(host='118.25.84.115',user = 'root',password = '123456',database='data_query',port = 3306,charset='utf8')
+        # self.cur = self.conn.cursor()
 
      #获取验证码id
     def get_captchaid(self):
         headers = {
-            'User-Agent': self.ua.random,
-            'Accept': "*/*",
-            'Cache-Control': "no-cache",
-            'Host': "zxgk.court.gov.cn",
-            'cookie': "JSESSIONID=0F26336969AE2E43E4AF769A1DA8EB45",
-            'accept-encoding': "gzip, deflate",
-            'Connection': "keep-alive",
-            'cache-control': "no-cache",
-            'X-Requested-With': 'XMLHttpRequest'
+            "User-Agent": self.ua.random,
+            "Accept": "application/json,text/javascript,*/*;q= 0.01",
+            "Cache-Control": "no-cache",
+            "Host": "zxgk.court.gov.cn",
+            "cookie": "JSESSIONID=0F26336969AE2E43E4AF769A1DA8EB45",
+            "accept-encoding": "gzip, deflate",
+            "Connection": "keep-alive",
+            "cache-control": "no-cache",
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+
         }
 
         response = requests.request("GET", self.start_url, headers=headers)
@@ -67,7 +72,7 @@ class IndexName(object):
         querystring = {"captchaId": captchaid, "random": "0.9207474150007781"}
         response = requests.request("GET",self.yzm_url, headers=self.headers, params=querystring)
         captcha_name = f'_{int(time.time())}'
-        with open(f'../spiders/verify_code/{captcha_name}.jpg','wb') as f:
+        with open(f'./verify_code/{captcha_name}.jpg','wb') as f:
                 f.write(response.content)
 
         return captcha_name
@@ -77,7 +82,7 @@ class IndexName(object):
 
             'a1366769',
             '1008611XJ...',
-            f'../spiders/verify_code/{captcha_name}.jpg',
+            f'./verify_code/{captcha_name}.jpg',
             "http://v1-http-api.jsdama.com/api.php?mod=php&act=upload",
             '4',
             '8',
@@ -89,65 +94,76 @@ class IndexName(object):
     def check_yzm(self,captchaid,code):
         querystring = {"captchaId": captchaid, "pCode": code}
         headers = {
-            'User-Agent': self.ua.random,
-            'Accept': "*/*",
+            "User-Agent": self.ua.random,
+            "Accept": "application/json, text/javascript, */*; q=0.01",
             'Cache-Control': "no-cache",
             #'Postman-Token': "fa755e84-c939-4d09-8b45-527cd425bc45,0cfb1ba6-16d6-4a2d-aecd-70d7f5258e9e",
-            'Host': "zxgk.court.gov.cn",
-            'cookie': "JSESSIONID=F63BA51751C76CCD1DD5A2FE01FF1C40",
-            'accept-encoding': "gzip, deflate",
-            'Connection': "keep-alive",
-            'cache-control': "no-cache",
-            'X-Requested-With': 'XMLHttpRequest'
+            "Host": "zxgk.court.gov.cn",
+            "cookie": "JSESSIONID=F63BA51751C76CCD1DD5A2FE01FF1C40",
+            "accept-encoding": "gzip, deflate",
+            "Connection": "keep-alive",
+            "cache-control": "no-cache",
+            'X-Requested-With': "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
         }
 
-        response = requests.request("GET", self.check_yzm_url, headers=headers, params=querystring)
+        response = requests.get(self.check_yzm_url, headers=headers, params=querystring)
         response.encoding = 'utf-8'
+
         return response.text
 
     #提交表单数据
     def get_page(self,name,cardnum):
+
         captchaid = self.get_captchaid()
+
         while True:
             captcha_name = self.get_captcha(captchaid)
+
             code = self.get_code(captcha_name)
+
             bool = self.check_yzm(captchaid, code)
-            if bool:
-                pic = os.listdir('../spiders/verify_code')
+
+
+            if int(bool)==1:
+                pic = os.listdir('./verify_code')
                 # 将正确识别的验证码复制到独立目录下
                 shutil.copyfile(
-                    f"../spiders/verify_code/{pic[-1]}",
-                    f"../spiders/True/{pic[-1]}")
-                break
-            else:
-                print("验证码识别错误")
-
-        querystring = {
-            "captchaId": captchaid,
-            'currentPage':1,
-            'pCardNum':cardnum,
-            'pCode':code,
-            'pName':name,
-            'searchCourtName':'全国法院（包含地方各级法院）',
-            'selectCourtArrange':1,
-            'selectCourtId':0
+                    f"./verify_code/{pic[-1]}",
+                    f"./True/{pic[-1]}")
+                querystring = {
+                    "captchaId": captchaid,
+                    "currentPage": 1,
+                    "pCardNum": cardnum,
+                    "pCode": code,
+                    "pName": name,
+                    "searchCourtName": "全国法院（包含地方各级法院）",
+                    "selectCourtArrange": 1,
+                    "selectCourtId": 0
 
                 }
 
-        response = requests.request("POST", self.post_url, headers=self.headers,data=querystring)
-        response.encoding = 'utf-8'
+                response = requests.post(self.post_url, headers=self.headers, data=querystring)
 
-        totalsize = json.loads(response.text)[0]["totalSize"]
+                # response.encoding = 'utf-8'
 
-        if totalsize:
-            result = json.loads(response.text)
-            pages = result[0]['totalPage']
-            return pages, captchaid, code
-        else:
-            return '未查到相关信息'
+                totalsize = response.json()[0]["totalSize"]
+
+                if totalsize:
+                    result = response.json()
+                    pages = result[0]['totalPage']
+                    return pages, captchaid, code
+                else:
+                    return '未查到相关信息'
+
+            else:
+                print("验证码识别错误")
+
+
 
     #主函数入口
     def main(self):
+
         self.lock.acquire()
         try:
             if not self.q.empty():
@@ -160,46 +176,55 @@ class IndexName(object):
                     for page in range(1, tup[0]+1):
                         querystring = {
                             "captchaId": tup[1],
-                            'currentPage': page,
-                            'pCardNum': cardnum,
-                            'pCode': tup[2],
-                            'pName': name,
-                            'searchCourtName': '全国法院（包含地方各级法院）',
-                            'selectCourtArrange': 1,
-                            'selectCourtId': 0
+                            "currentPage": page,
+                            "pCardNum": cardnum,
+                            "pCode": tup[2],
+                            "pName": name,
+                            "searchCourtName": "全国法院（包含地方各级法院）",
+                            "selectCourtArrange": 1,
+                            "selectCourtId": 0
 
                         }
 
-                        response = requests.request("POST", self.post_url, headers=self.headers, data=querystring)
-                        response.encoding = 'utf-8'
+                        response = requests.post(self.post_url, headers=self.headers, data=querystring)
+
+                        # response.encoding = 'utf-8'
                         if response.text:
-                            result = json.loads(response.text)
+
+                            result = response.json()
 
                             data = result[0]['result']
                             for each in data:
                                 dic = {}
-                                json_data = json.loads(each['jsonObject'],strict=False)
+                                # json_data = json.loads(each['jsonObject'])
+                                #
+                                # #姓名
+                                # dic['pname'] = json_data['XM'] if 'XM' in json_data else ''
+                                #
+                                # #性别
+                                # dic['sex'] = json_data['ZXFYMC'] if 'ZXFYMC' in json_data else ''
+                                #
+                                # #身份证号码
+                                # dic['cardnum'] = cardnum
+                                #
+                                # #立案时间
+                                # dic['filing_time'] = json_data['LASJ'] if 'LASJ' in json_data  else ''
+                                #
+                                # #案号
+                                # dic['case_num'] = json_data['AH'] if 'AH' in json_data else ''
+                                #
+                                # #企业信息
+                                # dic['enterprise_info'] = json_data['QY_MC'] if 'QY_MC'in json_data else ''
 
-                                #姓名
-                                dic['pname'] = json_data['XM'] if 'XM' in json_data else ''
-
-                                #性别
-                                dic['sex'] = json_data['ZXFYMC'] if 'ZXFYMC' in json_data else ''
-
-                                #身份证号码
+                                dic['pname'] = each['XM'] if 'XM' in each else ''
+                                dic['sex'] = each['ZXFYMC'] if 'ZXFYMC' in each else ''
                                 dic['cardnum'] = cardnum
+                                dic['filing_time'] = each['LASJStr'] if 'LASJ' in each else ''
+                                dic['case_num'] = each['AH'] if 'AH' in each else ''
 
-                                #立案时间
-                                dic['filing_time'] = json_data['LASJ'] if 'LASJ' in json_data  else ''
-
-                                #案号
-                                dic['case_num'] = json_data['AH'] if 'AH' in json_data else ''
-
-                                #企业信息
-                                dic['enterprise_info'] = json_data['QY_MC'] if 'QY_MC'in json_data else ''
 
                                 self.data_list.append(dic)
-                                self.save2Mysql(dic)
+                                # self.save2Mysql(dic)
 
                 else:
                     self.data_list.append(tup)
@@ -223,11 +248,12 @@ class IndexName(object):
                     # 企业信息
                     dic['enterprise_info'] = ''
 
-                    self.save2Mysql(dic)
+                    # self.save2Mysql(dic)
 
         except Exception as e:
             print(f"出现异常：{e}")
             self.data_list.append('403')
+            Send_Email().send_email(f'异常为:{str(e)}')
         self.lock.release()
 
     #将数据保存到数据库
@@ -255,16 +281,11 @@ class IndexName(object):
 
 if __name__ == '__main__':
 
-    t1 = time.time()
-    name = '王江红'
+    name = '业春'
     cardnum = ''
     index = IndexName()
     data = index.MyThread(name,cardnum)
-    #data = index.main(name,cardnum)
-    t2 = time.time()
-    print(f"耗时:{t2-t1}s")
     print(data)
-
 
 
 
